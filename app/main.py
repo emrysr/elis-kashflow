@@ -76,20 +76,27 @@ def invoices():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            fileurl = url_for('uploaded_file',filename=filename)
             file.save(filepath)
 
-            response = {'data':({'filename':filename,'path':filepath, 'url':url_for('uploaded_file',filename=filename)}),'meta':{'title':'add Invoice','status': 'OK'}}
+            response = {'data':({'filename':filename,'path':filepath, 'url':fileurl}),'meta':{'title':'add Invoice','status': 'OK'}}
             # return jsonify(response)
             #curl -H "Authorization: secret_key iMfLI3BmbngtHYvYGMUs8LvGn84nJZEmegcRpggG5gRy3yRZl1VPYtozkLxmhNWJ" 
             # -X POST -F file=@upload.pdf 
             rossum_url = 'https://all.rir.rossum.ai/document'
             files = {'file': open(filepath,'rb')}
             values = {'DB': 'photcat', 'OUT': 'csv', 'SHORT': 'short'}
-            headers = {'Authorization', 'secret_key '+app.config['ROSSUM_CONSUMER_KEY']}
+            headers = {'Authorization': 'secret_key '+app.config['ROSSUM_CONSUMER_KEY']}
             r = requests.post(rossum_url, files=files, headers=headers)
-            response = {'data':(),'meta':{'title':'add Invoice','status': 'OK'}}
+
+            if r.status_code == requests.codes.ok: 
+                response = {'data':(),'meta':{'title':'add Invoice','status': 'OK','status_code':r.status_code}}
+            else:
+                response = {'data':(),'meta':{'title':'add Invoice','status': 'Error','status_code':r.status_code,'requested':rossum_url,'headers':headers}}
+
+
     else:
-        response = {'data':invoices,'meta':{'title':'get Invoices','raw_file':url}}
+        response = {'data':invoices,'meta':{'title':'get Invoices','raw_file':fileurl}}
 
     return jsonify(response)
 

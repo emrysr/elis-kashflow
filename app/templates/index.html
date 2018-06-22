@@ -10,6 +10,22 @@
 @dragleave.stop.prevent="isDroppable = false" 
 @drop.stop.prevent="drop"
 >
+
+
+<div class="field">
+    <div class="control">
+        <div class="select is-primary">
+            <div class="select">
+                <select v-model="status">
+                    <option>ready</option>
+                    <option>error</option>
+                    <option>loading</option>
+                    <option>success</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="hero-body">
     <div class="container">
         <h1 class="title">{{messages.title}}</h1>
@@ -27,12 +43,22 @@
                 <label class="file-label">
                     <input ref="file" accept="application/pdf,image/*" name="file" class="file-input" capture type="file" id="file">
                     <span class="file-cta">
-                        <span class="file-icon">
+                        <span v-show="status=='ready'" class="icon">
                             <i class="fas fa-cloud-upload-alt fa-lg"></i>
+                        </span>
+                        <span v-show="status=='error'" class="icon">
+                            <i class="fas fa-times-circle fa-lg"></i>
+                        </span>
+                        <span v-show="status=='loading'" class="icon">
+                            <i class="fas fa-angle-double-up fa-lg"></i>
+                        </span>
+                        <span v-show="status=='success'" class="icon">
+                            <i class="fas fa-check fa-lg"></i>
                         </span>
                         <span class="file-label">
                             <span v-if="status=='success'">{{messages.success}}</span>
                             <span v-else-if="status=='error'">{{messages.error}}</span>
+                            <span v-else-if="status=='loading'">{{messages.loading}}</span>
                             <span v-else>{{ messages['select file'] }}</span>
                         </span>
                     </span>

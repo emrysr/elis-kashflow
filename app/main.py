@@ -45,7 +45,8 @@ def main():
         'select file': 'Choose a file…',
         'upload': 'Upload',
         'success': 'File Uploaded',
-        'error': 'Error, Please retry'
+        'error': 'Error',
+        'loading': "Uploading"
     }
     return render_template('index.html', invoices=invoices, messages=messages)
 

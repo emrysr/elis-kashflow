@@ -40,7 +40,20 @@ var upload = new Vue({
     },
     computed: {
         fileName: function(){
-            return !this.file ? "(or drag 'n drop)" : this.file.name
+            switch(this.status) {
+                case 'error':
+                    filename = "Please try again"
+                    break;
+                case 'loading':
+                    filename = "sending data"
+                    break;
+                case 'success':
+                    filename = "thanks"
+                    break;
+                default:
+                    filename = !this.file ? "(or drag 'n drop)" : this.file.name 
+            }
+            return filename
         },
         fileSize: function(){
             return !this.file ? '' : Number(this.file.size/1000).toFixed(2)+ 'KB'
@@ -66,28 +79,27 @@ var upload = new Vue({
                 body: formData
             })
             .then(function(response) {
-                vm.status = 'ready'
                 if (!response.ok) {
+                    vm.status = 'error'
                     throw Error("Unexpected Response: ", response.statusText)
                 }
                 return response.json()
             })
             .then(function(json) {
                 vm.responses.push(json);
-                this.status = 'success'
+                vm.status = 'success'
                 vm.notify()
                 vm.invoice = json
             })
             .catch((response) => {
                 vm.errors.push(response)
-                this.status = 'error'
+                vm.status = 'error'
                 vm.notify()
                 console.log(response)
             })
         },
         notify: function() {
             let vm = this
-
             // repeat
             let notifyTimer = setInterval(function(){
                 if(vm.wait) {

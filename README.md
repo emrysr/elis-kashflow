@@ -2,7 +2,7 @@
 ## automated invoice entry to kashflow
 python flask application running on nginx via uwsgi on a single docker container. no database
 
-[[https://github.com/emrysr/elis-kashflow/blob/master/app/static/img/screenshot1.png|alt=elis-kashflow]]
+![Screenshot 1](/static/img/screenshot1.png?raw=true "22/06/2018")
 
 this currently only works if you've got a kashflow.com account. other bookeeping services could be added if their apis are available.
 https://www.kashflow.com/
@@ -13,7 +13,7 @@ https://rossum.ai/elis
 ## docker
 uses this docker image to base the build on:
 https://hub.docker.com/r/tiangolo/uwsgi-nginx-flask/
-**loads of work done by [@tiangolo](https://github.com/tiangolo/uwsgi-nginx-flask-docker) to get this to work so well. thanks
+**loads of work done by [@tiangolo](https://github.com/tiangolo/uwsgi-nginx-flask-docker) to get this to work so well**. thanks
 
 ## frontend
 bulma is used to style the html. vuejs is used to keep state in the browser.

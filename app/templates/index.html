@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+{% block title %}Invoices{% endblock %}
+{% block content %}
+
+
+<section id="upload-new" class="hero is-white is-relative" 
+  :class="{droppable: isDroppable }" 
+  @dragenter.stop.prevent="isDroppable = true" 
+  @dragover.stop.prevent ="isDroppable = true" 
+  @dragleave.stop.prevent="isDroppable = false" 
+  @drop.stop.prevent="drop"
+>
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">{{messages.title}}</h1>
+            <form method="POST" @change="sendFile" @submit.prevent="" enctype="multipart/form-data">
+                <div class="field is-grouped">
+                    <div class="file has-name control is-boxed" 
+                    @mouseenter="wait=true" @mouseleave="wait=false"
+                    :class="{
+                        'is-loading': status=='loading', 
+                        'is-info': status=='loading', 
+                        'is-danger':  status=='error', 
+                        'is-success': status=='success',
+                        'is-warning': status=='ready'
+                    }">
+                    <label class="file-label">
+                        <input ref="file" accept="application/pdf,image/*" name="file" class="file-input" capture type="file" id="file" @change="fileChanged">
+                        <span class="file-cta">
+                            <span class="file-icon">
+                                <i class="fas fa-cloud-upload-alt fa-lg"></i>
+                            </span>
+                            <span class="file-label">
+                                <span v-if="status=='success'">{{messages.success}}</span>
+                                <span v-else-if="status=='error'">{{messages.error}}</span>
+                                <span v-else>{{ messages['select file'] }}</span>
+                            </span>
+                        </span>
+                        <span class="file-name has-text-centered" id="filename">${fileName}</span>
+                    </label>
+                </div>
+                
+                <p class="help" style="padding-top:.3em">
+                    <span v-if="file">${fileSize} <br>${fileType}</span>
+                    <span v-else>&nbsp;</span>
+                </p>
+            </div>
+            
+        </div>
+    </form>
+</div>
+</div>
+</section>
+
+
+<section class="section" id="invoices">
+    <div class="container">
+        <h4 class="title">Uploaded</h4>
+        <p class="subtitle">List of uploaded invoices 
+            <button class="button is-rounded is-small is-outlined is-primary" 
+              :class="{'is-loading': status=='loading'}" 
+              @click="sync"
+            >
+            <span class="icon">
+                <i class="fas fa-sync-alt"></i>
+            </span>
+            <span>Sync</span>
+        </button></p>
+        <p>View the result before sending to kashflow.</p>{{key}}
+        <table class="table is-hoverable is-striped is-fullwidth">
+            <thead>
+                <tr>
+                    <th>invoice id</th>
+                    <th>uploaded</th>
+                    <th>view</th>
+                    <th>status</th>
+                    <th>kashflow id</th>
+                    <th>send</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices|sort(attribute='date', reverse = True) %}
+                <tr class="{% if not invoice.ready %}has-text-grey {% elif invoice.sent %}has-text-primary{% endif %}">
+                    <td>{{invoice.elis_id|upper}}</td>
+                    <td>{{invoice.date|strftime}}</td>
+                    <td>{% if invoice.ready %}<a href="{{invoice.url}}">{{invoice.title}}</a>{% else %}{{invoice.title}}{% endif %}</td>
+                    <td>{{invoice.state|capitalize}} ({{invoice.sentdate|timesince if invoice.sentdate else 'Not Sent'}})</td>
+                    <td>{{invoice.kashflow_id}}</td>
+                    <td>{% if invoice.sent %}<button class="button is-success is-outlined" disabled>Sent</button>
+                        {% elif invoice.ready %}<button class="button is-primary">Send</button>
+                        {% else %}<a href="#" class="button" disabled>Not Ready</a>
+                        {% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="6">Found ${invoices.length} results</td></tr>
+                </tfoot>
+            </table>
+        </div>
+        
+    </section>
+    {% endblock %}

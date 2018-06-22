@@ -1,0 +1,23 @@
+.is-relative{
+    position:relative!important;
+}
+.copyleft {
+    display:inline-block;
+    transform: rotate(180deg);
+}
+#upload-new{ transition: background .2s ease-out; }
+
+#upload-new.droppable{ background:hsl(348, 100%, 95%); }
+#upload-new::after{
+    content: "";
+    height: 100%;
+    background: hsl(348, 100%, 61%);
+    top: 0;
+    left: 0;
+    width: 0;
+    position: absolute;
+    transition: width .2s ease-out;
+}
+#upload-new.droppable::after{
+    width: 1vw;
+}

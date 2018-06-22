@@ -1,0 +1,13 @@
+{
+  "name": "elis-kashflow",
+  "version": "1.0.0",
+  "description": "send invoices to rossum elis and pass the result to kashflow",
+  "main": "../main.py",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+  }
+}

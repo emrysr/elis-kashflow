@@ -50,9 +50,10 @@ def main():
     }
     return render_template('index.html', invoices=invoices, messages=messages)
 
-@app.route("/test", methods=['POST'])
-def test():
-    return jsonify(request.files)
+@app.route("/test/<doc_id>")
+def test(doc_id):
+    r = reqests.get('https://all.rir.rossum.ai/document/'+doc_id)
+    return r.json()
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -80,20 +81,39 @@ def invoices():
             file.save(filepath)
 
             response = {'data':({'filename':filename,'path':filepath, 'url':fileurl}),'meta':{'title':'add Invoice','status': 'OK'}}
-            # return jsonify(response)
-            #curl -H "Authorization: secret_key iMfLI3BmbngtHYvYGMUs8LvGn84nJZEmegcRpggG5gRy3yRZl1VPYtozkLxmhNWJ" 
-            # -X POST -F file=@upload.pdf 
             rossum_url = 'https://all.rir.rossum.ai/document'
             files = {'file': open(filepath,'rb')}
             values = {'DB': 'photcat', 'OUT': 'csv', 'SHORT': 'short'}
             headers = {'Authorization': 'secret_key '+app.config['ROSSUM_CONSUMER_KEY']}
             r = requests.post(rossum_url, files=files, headers=headers)
-
+            jsonBody = r.json()
             if r.status_code == requests.codes.ok: 
-                response = {'data':(),'meta':{'title':'add Invoice','status': 'OK','status_code':r.status_code}}
+                response = {
+                    'data': {
+                        'invoices': [{'id': jsonBody['id']}]
+                    },
+                    'meta': {
+                        'title':'add Invoice',
+                        'status': 'Success',
+                        'status_code': r.status_code,
+                        'requested': rossum_url,
+                        'response': jsonBody
+                    }
+                }
             else:
-                response = {'data':(),'meta':{'title':'add Invoice','status': 'Error','status_code':r.status_code,'requested':rossum_url,'headers':headers}}
 
+                response = {
+                    'data': {
+                        'invoices': []
+                    },
+                    'meta': {
+                        'title':'add Invoice',
+                        'status': 'Error',
+                        'status_code': r.status_code,
+                        'requested': rossum_url,
+                        'response': jsonBody
+                    }
+                }
 
     else:
         response = {'data':invoices,'meta':{'title':'get Invoices','raw_file':fileurl}}

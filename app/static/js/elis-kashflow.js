@@ -49,22 +49,15 @@ var upload = new Vue({
             return !this.file ? '' : this.file.type
         }
     },
-    watch: {
-        status: function(value) {
-            console.log('status changed to: '+value)
-        }
-    },
     methods: {
         drop: function(event) {
-            console.log('drop')
             this.isDroppable = false
             this.$refs.file.files = event.dataTransfer.files
-            this.$refs.file.files.dispatchEvent(new Event('change'))            
-        },
-        fileChanged: function(event){
-            this.file = this.$refs.file.files[0]
+            this.$refs.file.form.dispatchEvent(new Event('change'))
         },
         sendFile: function(event) {
+            console.log('sendFile')
+            this.file = this.$refs.file.files[0]
             let formData = new FormData()
             this.status = 'loading'
             vm = this
@@ -96,7 +89,7 @@ var upload = new Vue({
         },
         notify: function() {
             let vm = this
-            
+
             // repeat
             let notifyTimer = setInterval(function(){
                 if(vm.wait) {
@@ -106,9 +99,9 @@ var upload = new Vue({
                 vm.file = false
                 vm.status = 'ready'
             }, vm.errorTimeout)
-            
+
             // clear interal after 3
-            setTimeout(function() { 
+            setTimeout(function() {
                 clearInterval(notifyTimer)
                 vm.file = false
                 vm.status = 'ready'
@@ -153,10 +146,15 @@ var list = new Vue({
     }
 })
 
-var list = new Vue({
-    el: '#main-nav',
+
+/**
+* footer options
+*/
+var footer = new Vue({
+    el: '#footer',
     delimiters: ['${','}'],
     data: {
-        isExpanded: false,
+        status2: upload.status,
+        status: 'you dude',
     }
 })

@@ -64,10 +64,11 @@
     
     {% block content %}{% endblock %}
 
-    <footer class="footer">
+    <footer id="footer" class="footer">
         <div class="container">
             <div class="content has-text-centered">
                 <p>
+                    ${ status }
                     {% block footer %}
                     <span class="copyleft">&copy;</span> <a href="https://openenergymonitor.org/">openenergymonitor.org</a>.
                     {% endblock %}

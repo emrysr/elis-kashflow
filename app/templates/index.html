@@ -13,7 +13,7 @@
     <div class="hero-body">
         <div class="container">
             <h1 class="title">{{messages.title}}</h1>
-            <form method="POST" @change="sendFile" @submit.prevent="" enctype="multipart/form-data">
+            <form method="POST" @change="sendFile" @submit.prevent="sendFile" enctype="multipart/form-data">
                 <div class="field is-grouped">
                     <div class="file has-name control is-boxed" 
                     @mouseenter="wait=true" @mouseleave="wait=false"
@@ -25,7 +25,7 @@
                         'is-warning': status=='ready'
                     }">
                     <label class="file-label">
-                        <input ref="file" accept="application/pdf,image/*" name="file" class="file-input" capture type="file" id="file" @change="fileChanged">
+                        <input ref="file" accept="application/pdf,image/*" name="file" class="file-input" capture type="file" id="file">
                         <span class="file-cta">
                             <span class="file-icon">
                                 <i class="fas fa-cloud-upload-alt fa-lg"></i>
@@ -38,6 +38,7 @@
                         </span>
                         <span class="file-name has-text-centered" id="filename">${fileName}</span>
                     </label>
+                    <button class="button">Send</button>
                 </div>
                 
                 <p class="help" style="padding-top:.3em">

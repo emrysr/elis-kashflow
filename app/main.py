@@ -1,4 +1,4 @@
-import json, re, os
+import json, re, os, requests
 import datetime, dateutil.parser, humanize
 from flask import *
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user
@@ -17,11 +17,11 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # load .env settings from app/.env
-APP_ROOT = os.path.join(os.path.dirname(__file__), './')
+APP_ROOT = os.path.join(os.path.dirname(__file__))
 dotenv_path = os.path.join(APP_ROOT, '.env')
 load_dotenv(dotenv_path)
-app.config['KASHFLOW_KEY'] = os.getenv('KASHFLOW_CONSUMER_KEY')
-app.config['ROSSUM_KEY'] = os.getenv('ROSSUM_CONSUMER_KEY')
+app.config['KASHFLOW_CONSUMER_KEY'] = os.getenv('KASHFLOW_CONSUMER_KEY')
+app.config['ROSSUM_CONSUMER_KEY'] = os.getenv('ROSSUM_CONSUMER_KEY')
 
 # session keys
 app.config['APP_KEY'] = os.getenv('APP_SECRET_KEY')
@@ -75,10 +75,21 @@ def invoices():
             response = 'no selected file'
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+
+            response = {'data':({'filename':filename,'path':filepath, 'url':url_for('uploaded_file',filename=filename)}),'meta':{'title':'add Invoice','status': 'OK'}}
+            # return jsonify(response)
+            #curl -H "Authorization: secret_key iMfLI3BmbngtHYvYGMUs8LvGn84nJZEmegcRpggG5gRy3yRZl1VPYtozkLxmhNWJ" 
+            # -X POST -F file=@upload.pdf 
+            rossum_url = 'https://all.rir.rossum.ai/document'
+            files = {'file': open(filepath,'rb')}
+            values = {'DB': 'photcat', 'OUT': 'csv', 'SHORT': 'short'}
+            headers = {'Authorization', 'secret_key '+app.config['ROSSUM_CONSUMER_KEY']}
+            r = requests.post(rossum_url, files=files, headers=headers)
             response = {'data':(),'meta':{'title':'add Invoice','status': 'OK'}}
     else:
-        response = {'data':invoices,'meta':{'title':'get Invoices'}}
+        response = {'data':invoices,'meta':{'title':'get Invoices','raw_file':url}}
 
     return jsonify(response)
 

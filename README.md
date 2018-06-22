@@ -35,6 +35,12 @@ flask (and jinja templates) are used to return json,files or html to the browser
 the Dockerfile will build an image with the required settings. when ran the resulting container will run main.py as it starts. when you first build the docker image all the python includes should also be installed via pip - see app/requirements.txt 
 see [@tiangolo](https://github.com/tiangolo/uwsgi-nginx-flask-docker)'s docs for configuration options
 ```pip install --trusted-host pypi.python.org -r requirements.txt```
+
+## python required files
+```$ env1/bin/pip freeze > requirements.txt```
+
+```$ env2/bin/pip install -r requirements.txt```
+
 ## port mapping
 localhost:8080 is mapped to container:80
 

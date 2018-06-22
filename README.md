@@ -2,7 +2,7 @@
 ## automated invoice entry to kashflow
 python flask application running on nginx via uwsgi on a single docker container. no database
 
-![Screenshot 1](/static/img/screenshot1.png?raw=true "22/06/2018")
+![Screenshot 1](app/static/img/screenshot1.png?raw=true "22/06/2018")
 
 this currently only works if you've got a kashflow.com account. other bookeeping services could be added if their apis are available.
 https://www.kashflow.com/

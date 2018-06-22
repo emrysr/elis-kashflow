@@ -17,7 +17,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # load .env settings from app/.env
-APP_ROOT = os.path.join(os.path.dirname(__file__), '..')
+APP_ROOT = os.path.join(os.path.dirname(__file__), './')
 dotenv_path = os.path.join(APP_ROOT, '.env')
 load_dotenv(dotenv_path)
 app.config['KASHFLOW_KEY'] = os.getenv('KASHFLOW_CONSUMER_KEY')
@@ -33,8 +33,8 @@ app.config['APP_KEY'] = os.getenv('APP_SECRET_KEY')
 
 
 #file uploads
-UPLOAD_FOLDER = os.path.join(APP_ROOT, 'uploads')
-ALLOWED_EXTENSIONS = set(['pdf', 'png', 'jpg', 'jpeg'])
+app.config['UPLOAD_FOLDER'] = os.path.join(APP_ROOT, 'uploads')
+app.config['ALLOWED_EXTENSIONS'] = set(['pdf', 'png', 'jpg', 'jpeg'])
 
 # routes
 @app.route("/")
@@ -51,7 +51,11 @@ def main():
 
 @app.route("/test", methods=['POST'])
 def test():
-    return jsonify('hi')
+    return jsonify(request.files)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 @app.route("/invoices", methods=['GET','POST'])
 def invoices():
@@ -67,7 +71,6 @@ def invoices():
 
         file = request.files['file']
         if file.filename == '':
-            # flask.flash('No selected file')
             response = 'no selected file'
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)

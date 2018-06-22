@@ -56,9 +56,9 @@ var upload = new Vue({
             this.$refs.file.form.dispatchEvent(new Event('change'))
         },
         sendFile: function(event) {
-            console.log('sendFile')
+            let form = event.target.tagName == 'FORM' ? event.target : event.target.form
             this.file = this.$refs.file.files[0]
-            let formData = new FormData()
+            let formData = new FormData(form)
             this.status = 'loading'
             vm = this
             fetch('invoices', {

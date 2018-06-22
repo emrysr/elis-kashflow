@@ -4,51 +4,51 @@
 
 
 <section id="upload-new" class="hero is-white is-relative" 
-  :class="{droppable: isDroppable }" 
-  @dragenter.stop.prevent="isDroppable = true" 
-  @dragover.stop.prevent ="isDroppable = true" 
-  @dragleave.stop.prevent="isDroppable = false" 
-  @drop.stop.prevent="drop"
+:class="{droppable: isDroppable }" 
+@dragenter.stop.prevent="isDroppable = true" 
+@dragover.stop.prevent ="isDroppable = true" 
+@dragleave.stop.prevent="isDroppable = false" 
+@drop.stop.prevent="drop"
 >
-    <div class="hero-body">
-        <div class="container">
-            <h1 class="title">{{messages.title}}</h1>
-            <form method="POST" @change="sendFile" @submit.prevent="sendFile" enctype="multipart/form-data">
-                <div class="field is-grouped">
-                    <div class="file has-name control is-boxed" 
-                    @mouseenter="wait=true" @mouseleave="wait=false"
-                    :class="{
-                        'is-loading': status=='loading', 
-                        'is-info': status=='loading', 
-                        'is-danger':  status=='error', 
-                        'is-success': status=='success',
-                        'is-warning': status=='ready'
-                    }">
-                    <label class="file-label">
-                        <input ref="file" accept="application/pdf,image/*" name="file" class="file-input" capture type="file" id="file">
-                        <span class="file-cta">
-                            <span class="file-icon">
-                                <i class="fas fa-cloud-upload-alt fa-lg"></i>
-                            </span>
-                            <span class="file-label">
-                                <span v-if="status=='success'">{{messages.success}}</span>
-                                <span v-else-if="status=='error'">{{messages.error}}</span>
-                                <span v-else>{{ messages['select file'] }}</span>
-                            </span>
+<div class="hero-body">
+    <div class="container">
+        <h1 class="title">{{messages.title}}</h1>
+        <form method="POST" @change="sendFile" @submit.prevent="sendFile" enctype="multipart/form-data">
+            <div class="field is-grouped">
+                <div class="file has-name control is-boxed" 
+                @mouseenter="wait=true" @mouseleave="wait=false"
+                :class="{
+                    'is-loading': status=='loading', 
+                    'is-info': status=='loading', 
+                    'is-danger':  status=='error', 
+                    'is-success': status=='success',
+                    'is-warning': status=='ready'
+                }">
+                <label class="file-label">
+                    <input ref="file" accept="application/pdf,image/*" name="file" class="file-input" capture type="file" id="file">
+                    <span class="file-cta">
+                        <span class="file-icon">
+                            <i class="fas fa-cloud-upload-alt fa-lg"></i>
                         </span>
-                        <span class="file-name has-text-centered" id="filename">${fileName}</span>
-                    </label>
-                    <button class="button">Send</button>
-                </div>
-                
-                <p class="help" style="padding-top:.3em">
-                    <span v-if="file">${fileSize} <br>${fileType}</span>
-                    <span v-else>&nbsp;</span>
-                </p>
+                        <span class="file-label">
+                            <span v-if="status=='success'">{{messages.success}}</span>
+                            <span v-else-if="status=='error'">{{messages.error}}</span>
+                            <span v-else>{{ messages['select file'] }}</span>
+                        </span>
+                    </span>
+                    <span class="file-name has-text-centered" id="filename">${fileName}</span>
+                </label>
+                <!-- <button class="button">Send</button> -->
             </div>
             
+            <p class="help" style="padding-top:.3em">
+                <span v-if="file">${fileSize} <br>${fileType}</span>
+                <span v-else>&nbsp;</span>
+            </p>
         </div>
-    </form>
+        
+    </div>
+</form>
 </div>
 </div>
 </section>
@@ -59,8 +59,8 @@
         <h4 class="title">Uploaded</h4>
         <p class="subtitle">List of uploaded invoices 
             <button class="button is-rounded is-small is-outlined is-primary" 
-              :class="{'is-loading': status=='loading'}" 
-              @click="sync"
+            :class="{'is-loading': status=='loading'}" 
+            @click="sync"
             >
             <span class="icon">
                 <i class="fas fa-sync-alt"></i>

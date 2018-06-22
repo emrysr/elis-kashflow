@@ -73,12 +73,10 @@ var upload = new Vue({
                 return response.json()
             })
             .then(function(json) {
-                //POST success read result
                 vm.responses.push(json);
                 this.status = 'success'
                 vm.notify()
-                //Place result into table
-                vm.invoice = {}
+                vm.invoice = json
             })
             .catch((response) => {
                 vm.errors.push(response)

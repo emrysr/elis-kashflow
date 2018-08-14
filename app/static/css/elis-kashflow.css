@@ -21,3 +21,17 @@
 #upload-new.droppable::after{
     width: 1vw;
 }
+
+/* shrink burger menu on devices larger than a phone */
+/* Smartphones (landscape) ----------- */
+@media only screen and (min-width : 321px) {
+    #main-menu{
+        position: absolute;
+        right: 0;
+        transition: all .8s ease-out;
+        overflow: hidden;
+    }
+    #main-menu.is-active{
+        width: 17em;
+    }
+}

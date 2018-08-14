@@ -97,31 +97,49 @@
         <table class="table is-hoverable is-striped is-fullwidth">
             <thead>
                 <tr>
-                    <th>invoice id</th>
-                    <th>uploaded</th>
-                    <th>view</th>
-                    <th>status</th>
-                    <th>kashflow id</th>
+                    <th>document</th>
+                    <th>added</th>
+                    <th>supplier Name</th>
+                    <th>invoice ref</th>
+                    <th>invoice amount</th>
+                    <th>invoice date</th>
                     <th>send</th>
                 </tr>
             </thead>
             <tbody>
-                {% for invoice in invoices|sort(attribute='date', reverse = True) %}
-                <tr class="{% if not invoice.ready %}has-text-grey {% elif invoice.sent %}has-text-primary{% endif %}">
-                    <td>{{invoice.elis_id|upper}}</td>
-                    <td>{{invoice.date|strftime}}</td>
-                    <td>{% if invoice.ready %}<a href="{{invoice.url}}">{{invoice.title}}</a>{% else %}{{invoice.title}}{% endif %}</td>
-                    <td>{{invoice.state|capitalize}} ({{invoice.sentdate|timesince if invoice.sentdate else 'Not Sent'}})</td>
-                    <td>{{invoice.kashflow_id}}</td>
-                    <td>{% if invoice.sent %}<button class="button is-success is-outlined" disabled>Sent</button>
-                        {% elif invoice.ready %}<button class="button is-primary">Send</button>
-                        {% else %}<a href="#" class="button" disabled>Not Ready</a>
-                        {% endif %}</td>
+                <template v-for="invoice in invoices">
+                    <tr :class="{'has-text-grey-light': invoice.status != 'OK','has-text-info': invoice.status == 'OK'}">
+                        <td><a v-if="invoice.status=='OK'" :href="invoice.url" target="_preview" :title="invoice.doc_id">${short_doc_id(invoice.doc_id)}</a></td>
+                        <td :title="invoice.upload_date">${relative_time(invoice.upload_date)}</td>
+
+                        <td :title="invoice.supplier_id">${invoice.supplier}</td>
+                        <td>${invoice.invoice_ref}</td>
+                        <td :title="invoice.invoice_currency+' '+invoice.amount">${invoice.invoice_amount_formatted}</td>
+                        <td>${invoice.invoice_date}</td>
+                        <td>
+                            <button v-if="invoice.status=='OK'" class="button is-primary">OK?</button>
+                            <a v-else href="#" class="button" disabled>${ invoice.status }</a>
+                        </td>
                     </tr>
-                    {% endfor %}
+                </template>
+                {# this will only load on page reload - initial render #}
+                {% for invoice in invoices|sort(attribute='date', reverse = True) %}
+                <tr :class="{'is-hidden':status!='Loading'}" class="{% if invoice.status != 'OK' %}has-text-grey-light {% else %}has-text-info{% endif %}">
+                    <td>{% if invoice.status == 'OK' %}<a href="{{invoice.url}}" target="_preview" title="{{invoice.doc_id|upper }}">{{invoice.doc_id[:-16]|upper }}**</a>{% endif %}</td>
+                    <td title="{{invoice.upload_date|strftime}}">{{invoice.upload_date|timesince if invoice.upload_date}}</td>
+                    <td title="{{invoice.supplier_id}}">{{invoice.supplier}}</td>
+                    <td>{{invoice.invoice_ref}}</td>
+                    <td title="{{invoice.invoice_currency}} {{invoice.amount}}">{{invoice.invoice_amount_formatted}}</td>
+                    <td>{{invoice.invoice_date}}</td>
+                    <td>
+                        {% if invoice.status == 'OK' %}<button class="button is-primary">OK?</button>
+                        {% else %}<a href="#" class="button" disabled>{{ invoice.status }}</a>
+                        {% endif %}</td>
+                </tr>
+                {% endfor %}
                 </tbody>
                 <tfoot>
-                    <tr><td colspan="6">Found ${invoices.length} results</td></tr>
+                    <tr><td colspan="8">Found ${invoices.length} results</td></tr>
                 </tfoot>
             </table>
         </div>

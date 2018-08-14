@@ -52,7 +52,7 @@ def main():
 
 @app.route("/test/<doc_id>")
 def test(doc_id):
-    r = reqests.get('https://all.rir.rossum.ai/document/'+doc_id)
+    r = reqests.get('https://rossum.ai/document/?'+doc_id+'&apikey='+app.config['ROSSUM_CONSUMER_KEY'])
     return r.json()
 
 def allowed_file(filename):
@@ -81,7 +81,7 @@ def invoices():
             file.save(filepath)
 
             response = {'data':({'filename':filename,'path':filepath, 'url':fileurl}),'meta':{'title':'add Invoice','status': 'OK'}}
-            rossum_url = 'https://all.rir.rossum.ai/document'
+            rossum_url = app.config['ROSSUM_CONSUMER_KEY']
             files = {'file': open(filepath,'rb')}
             values = {'DB': 'photcat', 'OUT': 'csv', 'SHORT': 'short'}
             headers = {'Authorization': 'secret_key '+app.config['ROSSUM_CONSUMER_KEY']}
@@ -116,7 +116,7 @@ def invoices():
                 }
 
     else:
-        response = {'data':invoices,'meta':{'title':'get Invoices','raw_file':fileurl}}
+        response = {'data':invoices,'meta':{'title':'get Invoices'}}
 
     return jsonify(response)
 
@@ -142,6 +142,9 @@ def login():
 def logout():
     logout_user()
     return redirect(somewhere)
+
+
+
 
 # return svg with left & right text and background colour of colour
 @app.route("/shileld/<left>/<right>", defaults={'colour':'ff69b4','url':False})
@@ -200,7 +203,7 @@ def route_frontend(path):
     # doesn't use the `static` path (like in `<script src="bundle.js">`)
     file_path = os.path.join(app.static_folder, path)
     if os.path.isfile(file_path):
-        return send_file(file_path)
+        return send_file(file_path)     
     # ...or should be handled by the SPA's "router" in front end
     else:
         index_path = os.path.join(app.static_folder, 'index.html')
@@ -221,47 +224,73 @@ def serialize(self):
 
 
 # methods
+def getPreviewUrl(id):
+    return 'https://rossum.ai/document/'+id+'?apikey='+app.config['ROSSUM_CONSUMER_KEY']
+
+def getCurrencySymbol(currency,value):
+    if not value: return ''
+    symbols = {
+        'GBP': '£',
+        'USD': '$',
+        'EUR': '€'
+    }
+    symbol =  symbols.get(currency, False)
+    if not symbol :
+        return '{} ({})'.format(value, currency)
+    else:
+        return '{}{}'.format(symbol, value)
+        
+    
+
 def getInvoices():
     # invoices = {
-    #     'title' : 'this is one',
+    #     'id' : 'ab223asavsdfawcassdd',
+    #     'doc_id' : 'ab223asavsdfawcassdd',
     #     'url' : 'https://url.com',
-    #     'status' : 'success',
-    #     'elis_id' : 'ab223asavsdfawcassdd',
-    #     'kashflow_id' : 'ab223asavsdfawcassdd'
+    #     'date' : '2018-08-03 08:22:10',
+    #     'status' : 'success'
     # }
-    elis = [
-        {'id':'9pdijf9s', 'title':'val1', 'url':'val2', 'date':'2018-06-12','status':1,'state':'OK','ready':True,'sent':False,'sentdate':False},
-        {'id':'0987yhj', 'title':'val3', 'url':'val4', 'date':'2018-06-11','status':1,'state':'OK','ready':True,'sent':False,'sentdate':False},
-        {'id':'s8sfjosd', 'title':'val4', 'url':'val2', 'date':'2018-06-10','status':0,'state':'processing','ready':False,'sent':False,'sentdate':False},
-        {'id':'opia9011', 'title':'val9', 'url':'val1', 'date':'2018-06-09','status':2,'state':'sent','ready':True,'sent':True,'sentdate':'2018-06-09'}
+    rossum = [
+        {'id':'6e6c0278e5454f7c81ec05e2', 'upload_date':'2018-08-12', 'status':1, 'state':'OK', 'supplier_name':'Ideal Power Limited', 'supplier_id': 'IDP01', 'ready':True, 'invoice_ref': '17786', 'invoice_amount': 182.03, 'invoice_date':'2018-08-10', 'invoice_currency': 'GBP'},
+        {'id':'20278e5454f7c816e6cec05e', 'upload_date':'2018-08-12', 'status':1, 'state':'OK', 'supplier_name':'Acme inc.', 'supplier_id': 'ACME', 'ready':True, 'invoice_ref': 'AA17sq188', 'invoice_amount': 453.97, 'invoice_date':'2018-08-11', 'invoice_currency': 'USD'},
+        {'id':'e5454f7c86e81ec05e26c027', 'upload_date':'2018-08-11', 'status':1, 'state':'OK', 'supplier_name':'Acme inc.', 'supplier_id': 'ACME', 'ready':True, 'invoice_ref': 'AC17789', 'invoice_amount': 18.08, 'invoice_date':'2018-08-11', 'invoice_currency': 'AUD'},
+        {'id':'4f7c6e6c0278e5ec05e24581', 'upload_date':'2018-08-11', 'status':1, 'state':'OK', 'supplier_name':'Acme inc.', 'supplier_id': 'ACME', 'ready':True, 'invoice_ref': 'BB17790', 'invoice_amount': 182.03, 'invoice_date':'2018-08-12', 'invoice_currency': 'GBP'},
+        {'id':'5e2e6c0276f7c81ec08e5454', 'upload_date':'2018-06-10', 'status':0, 'state':'processing', 'supplier_name':'?', 'supplier_id': '?', 'ready':False, 'invoice_ref': '',      'invoice_amount': '',       'invoice_date':'', 'invoice_currency': ''}
     ]
+    # supplier id, Ideal Power Limited, invoice id
     kashflow = [
-        {'id':'lksdislsdlfms', 'custom_field':'opia9011'}
+        {'id':'002', 'date':'2018-07-14', 'custom_field':'6e6c0278e5454f7c81ec05e2'},
+        {'id':'003', 'date':'2018-06-14', 'custom_field':'20278e5454f7c816e6cec05e'},
+        {'id':'003', 'date':'2018-05-14', 'custom_field':'e5454f7c86e81ec05e26c027'},
+        {'id':'005', 'date':'2018-03-14', 'custom_field':'4f7c6e6c0278e5ec05e24581'},
+        {'id':'015', 'date':'2018-01-14', 'custom_field':'5e2e6c0276f7c81ec08e5454'}
     ]
+
+    # loop through all the kashflow purchases and find a custom field value that matches the pattern for a rossum elis document id
     invoices = []
-    for invoice in elis:
-        for item in kashflow:
-            invoice['kashflowid'] = item['id'] if item['custom_field'] == invoice['id'] else ''
-        invoice['elis_id'] = invoice['id']
-        del invoice['id'] 
-        invoices.append(invoice)
+    for purchase in kashflow:
+        # @todo: load kashflow api
+        # will need to change this to an ajax call to get the document detail based on the kashflow purchase item custom_field
+        for document in rossum:
+            if purchase['custom_field'] == document['id']:
+                invoice = dict(
+                    id = purchase['id'],
+                    doc_id = document['id'],
+                    upload_date = document['upload_date'],
+                    url = getPreviewUrl(document['id']),
+                    date = document['upload_date'],
+                    status = document['state'],
+                    supplier = document['supplier_name'],
+                    supplier_id = document['supplier_id'],
+                    invoice_date = document['invoice_date'],
+                    invoice_amount = document['invoice_amount'],
+                    invoice_currency = document['invoice_currency'],
+                    invoice_ref = document['invoice_ref'],
+                    invoice_amount_formatted = getCurrencySymbol(document['invoice_currency'],document['invoice_amount'])
+                )
+                invoices.append(invoice)
 
     return invoices
-    # for invoice in data:
-    #     invoices.append({
-    #         "uploaddate": invoice.date,
-    #         "id": invoice.id,
-    #         "ready": invoice.state == 'OK',
-    #         "sent": False,
-    #         "sentdate": False,
-    #         "state": invoice.state,
-    #         "status": invoice.status,
-    #         "title": invoice.title,
-    #         "url": invoice.url
-    #     })
-
-    # return invoices
-
 
 # template filters
 @app.template_filter('strftime')
@@ -274,7 +303,8 @@ def _jinja2_filter_datetime(date, fmt=None):
 @app.template_filter('timesince')
 def _jinja2_filter_datetime(strdate, fmt=None):
     date = dateutil.parser.parse(strdate)
-    return humanize.naturaltime(datetime.datetime.now()-date)
+    
+    return humanize.naturaltime(datetime.datetime.now() - date)
 
 
 # host the app

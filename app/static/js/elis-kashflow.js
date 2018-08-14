@@ -22,7 +22,9 @@ const i18n = new VueI18n({
     //fallbackLocale: 'en'
 })
 
-
+/**
+ * Handle the document upload via js
+ */
 var upload = new Vue({
     i18n: i18n,
     el: '#upload-new',
@@ -133,9 +135,13 @@ var list = new Vue({
     },
     methods: {
         sync: function(event){
-            this.status = 'loading'
-            event.target.blur()
-            event.preventDefault()
+            if (event) {
+                this.status = 'loading'
+                event.target.blur()
+                event.preventDefault()
+            } else {
+                this.status = 'Loading'
+            }
             this.getInvoices()
         },
         getInvoices: function(){
@@ -152,10 +158,30 @@ var list = new Vue({
                 vm.status = 'error'
                 console.log('Error: ',response)
             })
+        },
+        short_doc_id: function(doc_id){
+            return doc_id.toUpperCase().substr(0,8)+'**'
+        },
+        relative_time: function(time){
+            return moment(time).fromNow()
         }
+    },
+    mounted: function () {
+        this.sync()
     }
 })
 
+
+/**
+* main-nav options
+*/
+var mainNav = new Vue({
+    el: '#main-nav',
+    delimiters: ['${','}'],
+    data: {
+        isExpanded: false
+    }
+})
 
 /**
 * footer options
@@ -164,7 +190,6 @@ var footer = new Vue({
     el: '#footer',
     delimiters: ['${','}'],
     data: {
-        status2: upload.status,
-        status: 'you dude',
+        status: upload.status,
     }
 })

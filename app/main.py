@@ -20,21 +20,31 @@ login_manager.login_view = 'login'
 APP_ROOT = os.path.join(os.path.dirname(__file__))
 dotenv_path = os.path.join(APP_ROOT, '.env')
 load_dotenv(dotenv_path)
-app.config['KASHFLOW_CONSUMER_KEY'] = os.getenv('KASHFLOW_CONSUMER_KEY')
+app.config['KASHFLOW_API_URL'] = os.getenv('KASHFLOW_API_URL')
+app.config['KASHFLOW_API_MEMORABLE_WORD'] = os.getenv('KASHFLOW_API_MEMORABLE_WORD')
+app.config['KASHFLOW_API_PASSWORD'] = os.getenv('KASHFLOW_API_PASSWORD')
+app.config['KASHFLOW_API_USERNAME'] = os.getenv('KASHFLOW_API_USERNAME')
+app.config['KASHFLOW_API_DUMMY_SUPPLIER_CODE'] = os.getenv('KASHFLOW_API_DUMMY_SUPPLIER_CODE')
 app.config['ROSSUM_CONSUMER_KEY'] = os.getenv('ROSSUM_CONSUMER_KEY')
+app.config['ROSSUM_ENDPOINT'] = os.getenv('ROSSUM_ENDPOINT')
 
 # session keys
-app.config['APP_KEY'] = os.getenv('APP_SECRET_KEY')
+app.secret_key = os.getenv('APP_SECRET_KEY')
+app.config['SESSION_TYPE'] = 'filesystem'
 
 #gettext addon
 # translations = get_gettext_translations()
 # env = Environment(extensions=['jinja2.ext.i18n'])
 # env.install_gettext_translations(translations)
 
-
 #file uploads
 app.config['UPLOAD_FOLDER'] = os.path.join(APP_ROOT, 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = set(['pdf', 'png', 'jpg', 'jpeg'])
+
+
+
+
+
 
 # routes
 @app.route("/")
@@ -50,76 +60,83 @@ def main():
     }
     return render_template('index.html', invoices=invoices, messages=messages)
 
-@app.route("/test/<doc_id>")
-def test(doc_id):
-    r = reqests.get('https://rossum.ai/document/?'+doc_id+'&apikey='+app.config['ROSSUM_CONSUMER_KEY'])
-    return r.json()
+
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-@app.route("/invoices", methods=['GET','POST'])
+
+
+@app.route("/documents", methods=['POST'])
+def documents():
+    """send file to elis rossum server and return json response with document id"""
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        response = 'file not in files'
+
+    file = request.files['file']
+    if file.filename == '':
+        response = 'no selected file'
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        fileurl = url_for('uploaded_file',filename=filename)
+        file.save(filepath)
+
+        response = {'data':({'filename':filename,'path':filepath, 'url':fileurl}),'meta':{'title':'add Invoice','status': 'OK'}}
+        files = {'file': open(filepath,'rb')}
+        # values = {'DB': 'photcat', 'OUT': 'csv', 'SHORT': 'short'}
+        jsonBody = postRossum(files)
+        if r.status_code == requests.codes.ok:
+            #@todo: send file and note with the document_id to kashflow as a new purchase under the provider specified in the .env file
+            response = {
+                'data': {
+                    'invoices': [{'id': jsonBody['id']}]
+                },
+                'meta': {
+                    'title':'add Invoice',
+                    'status': 'Success',
+                    'status_code': r.status_code,
+                    'response': jsonBody
+                }
+            }
+        else:
+            response = {
+                'data': {
+                    'invoices': []
+                },
+                'meta': {
+                    'title':'add Invoice',
+                    'status': 'Error',
+                    'status_code': r.status_code,
+                    'response': jsonBody
+                }
+            }
+
+
+
+@app.route("/invoices")
 def invoices():
-    invoices = getInvoices()
-    if request.method == 'POST':
-        #send file to elis server and send back partial response to client
-
-        #on response from elis check cashflow to see if there are any matching purchase orders created
-
-        # check if the post request has the file part
-        if 'file' not in request.files:
-            response = 'file not in files'
-
-        file = request.files['file']
-        if file.filename == '':
-            response = 'no selected file'
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            fileurl = url_for('uploaded_file',filename=filename)
-            file.save(filepath)
-
-            response = {'data':({'filename':filename,'path':filepath, 'url':fileurl}),'meta':{'title':'add Invoice','status': 'OK'}}
-            rossum_url = app.config['ROSSUM_CONSUMER_KEY']
-            files = {'file': open(filepath,'rb')}
-            values = {'DB': 'photcat', 'OUT': 'csv', 'SHORT': 'short'}
-            headers = {'Authorization': 'secret_key '+app.config['ROSSUM_CONSUMER_KEY']}
-            r = requests.post(rossum_url, files=files, headers=headers)
-            jsonBody = r.json()
-            if r.status_code == requests.codes.ok: 
-                response = {
-                    'data': {
-                        'invoices': [{'id': jsonBody['id']}]
-                    },
-                    'meta': {
-                        'title':'add Invoice',
-                        'status': 'Success',
-                        'status_code': r.status_code,
-                        'requested': rossum_url,
-                        'response': jsonBody
-                    }
-                }
-            else:
-
-                response = {
-                    'data': {
-                        'invoices': []
-                    },
-                    'meta': {
-                        'title':'add Invoice',
-                        'status': 'Error',
-                        'status_code': r.status_code,
-                        'requested': rossum_url,
-                        'response': jsonBody
-                    }
-                }
-
-    else:
-        response = {'data':invoices,'meta':{'title':'get Invoices'}}
-
+    """ return a json list of invoices """
+    response = {'data':getInvoices(),'meta':{'title':'get Invoices'}}
     return jsonify(response)
 
+@app.route('/config')
+def config():
+    return jsonify({
+        'USERNAME':os.getenv('USERNAME'),
+        'PASSWORD':os.getenv('PASSWORD'),
+
+        'KASHFLOW_CONSUMER_KEY':os.getenv('KASHFLOW_CONSUMER_KEY'),
+
+        'ROSSUM_CONSUMER_KEY':app.config['ROSSUM_CONSUMER_KEY'],
+        'ROSSUM_ENDPOINT':app.config['ROSSUM_ENDPOINT'],
+        'APP_KEY':app.config['APP_KEY'],
+
+        'UPLOAD_FOLDER':app.config['UPLOAD_FOLDER'],
+        'ALLOWED_EXTENSIONS':', '.join(app.config['ALLOWED_EXTENSIONS']),
+    })
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -225,10 +242,13 @@ def serialize(self):
 
 # methods
 def getPreviewUrl(id):
+    """ return the url that displays the data overlayed over the scan"""
     return 'https://rossum.ai/document/'+id+'?apikey='+app.config['ROSSUM_CONSUMER_KEY']
 
 def getCurrencySymbol(currency,value):
+    """ return the value with a symbol if the 3 char currency name is in this list - else return the value and the name """
     if not value: return ''
+    currency = currency.upper()
     symbols = {
         'GBP': '£',
         'USD': '$',
@@ -240,57 +260,167 @@ def getCurrencySymbol(currency,value):
     else:
         return '{}{}'.format(symbol, value)
         
+def getKashflowTemporaryToken():
+    """Gets the JSON response with the temporary token"""
+    url = app.config['KASHFLOW_API_URL']+'/sessiontoken'
+    headers = {'Content-Type': 'application/json'}
+    data = '{{ "Password":"{}", "UserName":"{}" }}'.format(app.config['KASHFLOW_API_PASSWORD'],app.config['KASHFLOW_API_USERNAME'])
+    r = requests.post(url, headers=headers, data=data)
+    jsonBody = r.json()
+    return jsonBody
+
+def getKashflowSessionToken(temp):
+    """Gets the session token. Requires that you first run getKashflowTemporaryToken()"""
+    url = app.config['KASHFLOW_API_URL']+'/sessiontoken'
+    memorableWord = app.config['KASHFLOW_API_MEMORABLE_WORD']
+
+    p1 = temp['MemorableWordList'][0]['Position']
+    p2 = temp['MemorableWordList'][1]['Position']
+    p3 = temp['MemorableWordList'][2]['Position']
+
+    v1 = memorableWord[p1-1]
+    v2 = memorableWord[p2-1]
+    v3 = memorableWord[p3-1]
+
+    headers = {'Content-Type': 'application/json'}
+    data = '{{"TemporaryToken":"{}","MemorableWordList":[ {{ "Position":{}, "Value":"{}" }}, {{ "Position":{}, "Value":"{}" }}, {{ "Position":{}, "Value":"{}" }}] }}'.format(temp['TemporaryToken'],p1,v1,p2,v2,p3,v3)
+    r = requests.put(url, headers=headers, data=data)
+    jsonBody = r.json()
+    return jsonBody['SessionToken']
+
+
+def kashflowApiCall(endpoint='',verb='GET', data=''):
+    """ perform a http request to app.kashflow.com and return the response as a dict"""
+    # put incoming verb into uppercase chars
+    verb = verb.upper()
+
+    # get session key if not available
+    if not session.get('kashflowToken'):
+        tmpToken = getKashflowTemporaryToken()
+        session['kashflowToken'] = getKashflowSessionToken(tmpToken)
     
+    # add auth header if in session
+    headers = {'Content-Type': 'application/json'}
+    if session.get('kashflowToken'):
+        headers['Authorization'] = 'KfToken {}'.format(session['kashflowToken'])
+    
+    url = app.config['KASHFLOW_API_URL']+'/{}'.format(endpoint)
+    
+    if verb == 'POST':
+        r = requests.post(url, headers=headers, data=data)
+    elif verb == 'PUT':
+        r = requests.put(url, headers=headers, data=data)
+    elif verb == 'UPDATE':
+        r = requests.update(url, headers=headers, data=data)
+    elif verb == 'DELETE':
+        r = requests.delete(url, headers=headers, data=data)
+    else:
+        r = requests.get(url, headers=headers)
+
+    jsonBody = r.json()
+    return jsonBody
+
+def getKashflow(endpoint):
+    """ perform a http GET request to app.kashflow.com and return the response as a dict"""
+    return kashflowApiCall(endpoint,'get')
+
+def getPurchases():
+    """ return list of purchase objects for the TEMP01 supplier """
+    return getKashflow('Purchases?SupplierCode={}'.format(app.config['KASHFLOW_API_DUMMY_SUPPLIER_CODE']))
+
+@app.route('/suppliers')
+def getSuppliers():
+    """ return json array of kashflow supplier names and ids """ 
+    suppliers = []
+    for supplier in getKashflow('suppliers')['Data']:
+        suppliers.append({
+            'Name': supplier['Name'],
+            'Code': supplier['Code']
+        })
+    return jsonify(suppliers)
+
+def getPurchaseDocumentIds():
+    """ check all notes for all purchases for the rossum document id"""
+    responses = []
+    purchases = getPurchases()
+    for p in purchases['Data']:
+        for note in getKashflow('Purchases/{}/notes'.format(p['Number'])):
+            document_ids = []
+            # pattern match the rossum elis document id pattern (24 hex chars)
+            m = re.search('([0-9a-fA-F]{24})',note['Text'])
+            # single note might have multiple ids (shouldn't, but could)
+            if m:
+                document_ids.append(m.group(0))
+
+            responses.append({
+                'id': p['Number'],
+                'date': p['IssuedDate'], 
+                'note_id': note['Number'], 
+                # 'message': note['Text'],
+                'document_id': ','.join(document_ids) # join multiples if they exist
+            })
+    return responses
+
+def getRossum(document_id):
+    """ send a http GET request to the rossum.ai server. """
+    return callRossumApi('/'+document_id, 'get')
+
+def postRossum(files):
+    """ send a http POST reqest to the rossum.ai server (Upload files ***)"""
+    return callRossumApi('','post',files)
+
+def callRossumApi(endpoint='',verb='get',files=''):
+    """ perform a http request to rossum.ai and return the response as a dict"""
+    # put incoming verb into uppercase chars
+    verb = verb.upper()
+    url = app.config['ROSSUM_ENDPOINT']+endpoint
+    headers = {'Authorization': 'secret_key '+app.config['ROSSUM_CONSUMER_KEY']}
+    if verb == 'POST':
+        r = requests.post(url, files=files, headers=headers)
+    else:
+        r = requests.get(url, headers=headers)
+    
+    return r.json()
+        
+@app.route('/document/<document_id>')
+def getDocumentJSON(document_id):
+    """ get all details regarding a rossum.ai scanned document. JSON output"""
+    document = getRossum(document_id)
+    return jsonify(document)
+
+def getDocument(document_id):
+    """ get all details regarding a rossum.ai scanned document"""
+    document = getRossum(document_id)
+    return document
 
 def getInvoices():
-    # invoices = {
-    #     'id' : 'ab223asavsdfawcassdd',
-    #     'doc_id' : 'ab223asavsdfawcassdd',
-    #     'url' : 'https://url.com',
-    #     'date' : '2018-08-03 08:22:10',
-    #     'status' : 'success'
-    # }
-    rossum = [
-        {'id':'6e6c0278e5454f7c81ec05e2', 'upload_date':'2018-08-12', 'status':1, 'state':'OK', 'supplier_name':'Ideal Power Limited', 'supplier_id': 'IDP01', 'ready':True, 'invoice_ref': '17786', 'invoice_amount': 182.03, 'invoice_date':'2018-08-10', 'invoice_currency': 'GBP'},
-        {'id':'20278e5454f7c816e6cec05e', 'upload_date':'2018-08-12', 'status':1, 'state':'OK', 'supplier_name':'Acme inc.', 'supplier_id': 'ACME', 'ready':True, 'invoice_ref': 'AA17sq188', 'invoice_amount': 453.97, 'invoice_date':'2018-08-11', 'invoice_currency': 'USD'},
-        {'id':'e5454f7c86e81ec05e26c027', 'upload_date':'2018-08-11', 'status':1, 'state':'OK', 'supplier_name':'Acme inc.', 'supplier_id': 'ACME', 'ready':True, 'invoice_ref': 'AC17789', 'invoice_amount': 18.08, 'invoice_date':'2018-08-11', 'invoice_currency': 'AUD'},
-        {'id':'4f7c6e6c0278e5ec05e24581', 'upload_date':'2018-08-11', 'status':1, 'state':'OK', 'supplier_name':'Acme inc.', 'supplier_id': 'ACME', 'ready':True, 'invoice_ref': 'BB17790', 'invoice_amount': 182.03, 'invoice_date':'2018-08-12', 'invoice_currency': 'GBP'},
-        {'id':'5e2e6c0276f7c81ec08e5454', 'upload_date':'2018-06-10', 'status':0, 'state':'processing', 'supplier_name':'?', 'supplier_id': '?', 'ready':False, 'invoice_ref': '',      'invoice_amount': '',       'invoice_date':'', 'invoice_currency': ''}
-    ]
-    # supplier id, Ideal Power Limited, invoice id
-    kashflow = [
-        {'id':'002', 'date':'2018-07-14', 'custom_field':'6e6c0278e5454f7c81ec05e2'},
-        {'id':'003', 'date':'2018-06-14', 'custom_field':'20278e5454f7c816e6cec05e'},
-        {'id':'003', 'date':'2018-05-14', 'custom_field':'e5454f7c86e81ec05e26c027'},
-        {'id':'005', 'date':'2018-03-14', 'custom_field':'4f7c6e6c0278e5ec05e24581'},
-        {'id':'015', 'date':'2018-01-14', 'custom_field':'5e2e6c0276f7c81ec08e5454'}
-    ]
-
-    # loop through all the kashflow purchases and find a custom field value that matches the pattern for a rossum elis document id
+    """loop through all the kashflow purchases and find a matching rossum elis document id"""
+    purchases = getPurchaseDocumentIds()
     invoices = []
-    for purchase in kashflow:
-        # @todo: load kashflow api
-        # will need to change this to an ajax call to get the document detail based on the kashflow purchase item custom_field
-        for document in rossum:
-            if purchase['custom_field'] == document['id']:
-                invoice = dict(
-                    id = purchase['id'],
-                    doc_id = document['id'],
-                    upload_date = document['upload_date'],
-                    url = getPreviewUrl(document['id']),
-                    date = document['upload_date'],
-                    status = document['state'],
-                    supplier = document['supplier_name'],
-                    supplier_id = document['supplier_id'],
-                    invoice_date = document['invoice_date'],
-                    invoice_amount = document['invoice_amount'],
-                    invoice_currency = document['invoice_currency'],
-                    invoice_ref = document['invoice_ref'],
-                    invoice_amount_formatted = getCurrencySymbol(document['invoice_currency'],document['invoice_amount'])
-                )
-                invoices.append(invoice)
-
+    for purchase in purchases:
+        document = getDocument(purchase['document_id'])
+        if purchase['document_id']:
+            invoice = dict(
+                id = purchase['id'],
+                doc_id = purchase['document_id'],
+                upload_date = purchase['date'],
+                url = getPreviewUrl(purchase['document_id']),
+                date = purchase['date'],
+                status = 'not yet',
+                supplier = document['fields'][21]['value'],
+                supplier_id = '??',
+                invoice_date = document['fields'][12]['value'],
+                invoice_amount = document['fields'][4]['value'],
+                invoice_currency = document['currency'],
+                invoice_ref = document['fields'][19]['value'],
+                invoice_amount_formatted = getCurrencySymbol(document['currency'],document['fields'][4]['value'])
+            )
+            invoices.append(invoice)
     return invoices
+    
+
+
+
 
 # template filters
 @app.template_filter('strftime')
@@ -309,8 +439,6 @@ def _jinja2_filter_datetime(strdate, fmt=None):
 
 # host the app
 if __name__ == "__main__":
-    app.secret_key = app.config['APP_KEY']
-    app.config['SESSION_TYPE'] = 'filesystem'
 
     sess.init_app(app)
 

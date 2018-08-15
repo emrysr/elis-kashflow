@@ -108,8 +108,8 @@
             </thead>
             <tbody>
                 <template v-for="invoice in invoices">
-                    <tr :class="{'has-text-grey-light': invoice.status != 'OK','has-text-info': invoice.status == 'OK'}">
-                        <td><a v-if="invoice.status=='OK'" :href="invoice.url" target="_preview" :title="invoice.doc_id">${short_doc_id(invoice.doc_id)}</a></td>
+                    <tr :class="{'has-text-grey-light': invoice.supplier=='','has-text-grey-dark': invoice.supplier != ''}">
+                        <td><a v-if="invoice.supplier != ''" :href="invoice.url" target="_preview" :title="invoice.doc_id">${short_doc_id(invoice.doc_id)}</a></td>
                         <td :title="invoice.upload_date">${relative_time(invoice.upload_date)}</td>
 
                         <td :title="invoice.supplier_id">${invoice.supplier}</td>
@@ -117,23 +117,23 @@
                         <td :title="invoice.invoice_currency+' '+invoice.amount">${invoice.invoice_amount_formatted}</td>
                         <td>${invoice.invoice_date}</td>
                         <td>
-                            <button v-if="invoice.status=='OK'" class="button is-primary">OK?</button>
-                            <a v-else href="#" class="button" disabled>${ invoice.status }</a>
+                            <button v-if="invoice.supplier != ''" class="button is-primary">OK?</button>
+                            <a v-else href="#" class="button" disabled>${ invoice.supplier }</a>
                         </td>
                     </tr>
                 </template>
                 {# this will only load on page reload - initial render #}
                 {% for invoice in invoices|sort(attribute='date', reverse = True) %}
-                <tr :class="{'is-hidden':status!='Loading'}" class="{% if invoice.status != 'OK' %}has-text-grey-light {% else %}has-text-info{% endif %}">
-                    <td>{% if invoice.status == 'OK' %}<a href="{{invoice.url}}" target="_preview" title="{{invoice.doc_id|upper }}">{{invoice.doc_id[:-16]|upper }}**</a>{% endif %}</td>
+                <tr :class="{'is-hidden':status!='Loading'}" class="{% if invoice.supplier=='' %}has-text-grey-light {% else %}has-text-grey-dark{% endif %}">
+                    <td>{% if invoice.supplier != '' %}<a href="{{invoice.url}}" target="_preview" title="{{invoice.doc_id|upper }}">{{invoice.doc_id[:-16]|upper }}**</a>{% endif %}</td>
                     <td title="{{invoice.upload_date|strftime}}">{{invoice.upload_date|timesince if invoice.upload_date}}</td>
                     <td title="{{invoice.supplier_id}}">{{invoice.supplier}}</td>
                     <td>{{invoice.invoice_ref}}</td>
                     <td title="{{invoice.invoice_currency}} {{invoice.amount}}">{{invoice.invoice_amount_formatted}}</td>
                     <td>{{invoice.invoice_date}}</td>
                     <td>
-                        {% if invoice.status == 'OK' %}<button class="button is-primary">OK?</button>
-                        {% else %}<a href="#" class="button" disabled>{{ invoice.status }}</a>
+                        {% if invoice.supplier != '' %}<button class="button is-primary">OK?</button>
+                        {% else %}<a href="#" class="button" disabled>{{ invoice.supplier }}</a>
                         {% endif %}</td>
                 </tr>
                 {% endfor %}
